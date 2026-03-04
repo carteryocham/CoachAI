@@ -154,4 +154,15 @@ MVP is functional and running on iOS via Expo Go. Not yet submitted to App Store
 
 ## Contributing
 
-This is a private repo. If you've been given access, reach out before making major changes. PRs welcome for bug fixes and features on the roadmap.
+This is an open source project. PRs welcome for bug fixes and features on the roadmap.
+
+If you want to collaborate more closely — co-build, co-found, or contribute significantly — reach out directly.
+
+## Contact
+
+**Carter Yocham**
+- GitHub: [@carteryocham](https://github.com/carteryocham)
+- Email: carteryocham@gmail.com
+- Twitter/X: @carteryocham
+
+If you're a developer, designer, or fitness industry person who wants to help build this into a real product — send me a message. Looking for someone who wants to go from MVP to App Store and beyond.
