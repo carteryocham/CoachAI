@@ -41,6 +41,12 @@ function PickerWheel({ label, options, selected, onSelect }) {
     <View>
       {label ? <Text style={s.statLabel}>{label}</Text> : null}
       <View style={s.pickerWrap}>
+        {/* Top bracket line */}
+        <View style={s.bracketTop}>
+          <View style={s.bracketCornerTL} />
+          <View style={s.bracketCornerTR} />
+        </View>
+
         <ScrollView style={s.picker} showsVerticalScrollIndicator={false}>
           {options.map(opt => (
             <TouchableOpacity
@@ -54,8 +60,12 @@ function PickerWheel({ label, options, selected, onSelect }) {
             </TouchableOpacity>
           ))}
         </ScrollView>
-        <View style={s.pickerFadeTop} pointerEvents="none" />
-        <View style={s.pickerFadeBot} pointerEvents="none" />
+
+        {/* Bottom bracket line */}
+        <View style={s.bracketBot}>
+          <View style={s.bracketCornerBL} />
+          <View style={s.bracketCornerBR} />
+        </View>
       </View>
       {selected
         ? <Text style={s.selLabel}>{selected} selected</Text>
@@ -168,7 +178,7 @@ export default function Onboarding({ onComplete }) {
           <Text style={s.heading}>Biological{'\n'}sex?</Text>
           <Text style={s.sub}>Used to calibrate calorie and hormone targets.</Text>
           <View style={s.cards}>
-            {['Male', 'Female'].map(o => (
+            {['Male', 'Female', 'Other / Prefer not to say'].map(o => (
               <OptionCard key={o} label={o}
                 selected={data.gender === o} onPress={() => sel('gender', o)} />
             ))}
@@ -345,7 +355,7 @@ const s = StyleSheet.create({
   root:          { flex: 1, backgroundColor: '#0a0a0a' },
   shell:         { flex: 1 },
   topBar:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16, gap: 12 },
-  backBtn:       { width: 36, height: 36, borderRadius: 18, backgroundColor: '#2a2a2a', alignItems: 'center', justifyContent: 'center' },
+  backBtn:       { width: 36, height: 36, borderRadius: 18, backgroundColor: '#1a1a1a', alignItems: 'center', justifyContent: 'center' },
   backArrow:     { color: '#fff', fontSize: 16, fontWeight: '600' },
   progressTrack: { flex: 1, height: 3, backgroundColor: '#1a1a1a', borderRadius: 2 },
   progressFill:  { height: 3, backgroundColor: '#fff', borderRadius: 2 },
@@ -365,14 +375,19 @@ const s = StyleSheet.create({
   cardSubSel:   { color: '#444' },
 
   statLabel:     { fontSize: 11, fontWeight: '700', color: '#555', letterSpacing: 2, marginBottom: 10, textAlign: 'center' },
-  pickerWrap:    { borderRadius: 14, overflow: 'hidden', position: 'relative' },
-  picker:        { height: 160, backgroundColor: '#1a1a1a' },
-  pickerItem:    { paddingVertical: 10, alignItems: 'center' },
-  pickerItemSel: { backgroundColor: '#F5A623', borderRadius: 8, marginHorizontal: 8 },
-  pickerText:    { fontSize: 15, color: '#555', fontWeight: '500' },
-  pickerTextSel: { color: '#0a0a0a', fontWeight: '700' },
-  pickerFadeTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 44, backgroundColor: '#1a1a1a', opacity: 0.85, borderTopLeftRadius: 14, borderTopRightRadius: 14 },
-  pickerFadeBot: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 44, backgroundColor: '#1a1a1a', opacity: 0.85, borderBottomLeftRadius: 14, borderBottomRightRadius: 14 },
+  pickerWrap:    { position: 'relative', marginBottom: 8 },
+  picker:        { height: 160, backgroundColor: '#1a1a1a', borderRadius: 14 },
+  pickerItem:    { paddingVertical: 10, alignItems: 'center', marginHorizontal: 8, borderRadius: 8 },
+pickerItemSel: { backgroundColor: '#F5A623' },
+pickerText:    { fontSize: 17, color: '#555', fontWeight: '500' },
+pickerTextSel: { color: '#0a0a0a', fontWeight: '800', fontSize: 17 },
+  bracketTop:    { position: 'absolute', top: 57, left: 16, right: 16, height: 2, flexDirection: 'row', justifyContent: 'space-between', zIndex: 10 },
+  bracketBot:    { position: 'absolute', top: 101, left: 16, right: 16, height: 2, flexDirection: 'row', justifyContent: 'space-between', zIndex: 10 },
+  bracketCornerTL: { width: 14, height: 10, borderTopWidth: 2, borderLeftWidth: 2, borderColor: '#F5A623', borderTopLeftRadius: 3 },
+  bracketCornerTR: { width: 14, height: 10, borderTopWidth: 2, borderRightWidth: 2, borderColor: '#F5A623', borderTopRightRadius: 3 },
+  bracketCornerBL: { width: 14, height: 10, borderBottomWidth: 2, borderLeftWidth: 2, borderColor: '#F5A623', borderBottomLeftRadius: 3 },
+  bracketCornerBR: { width: 14, height: 10, borderBottomWidth: 2, borderRightWidth: 2, borderColor: '#F5A623', borderBottomRightRadius: 3 },
+  pickerCenterHighlight: {},
   selLabel:      { textAlign: 'center', marginTop: 10, fontSize: 13, color: '#555', fontWeight: '500' },
 
   footer:         { paddingHorizontal: 24, paddingBottom: 40, paddingTop: 12, backgroundColor: '#0a0a0a' },

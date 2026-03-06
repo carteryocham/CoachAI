@@ -4,3 +4,5 @@ env.js
 *.orig.*
 web-build/
 .env
+
+.env.local

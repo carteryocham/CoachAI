@@ -5,6 +5,7 @@ export default {
     name: 'CoachAI',
     slug: 'coachai',
     version: '1.0.0',
+    scheme: 'coachai',
     orientation: 'portrait',
     icon: './assets/icon.png',
     splash: {
@@ -15,6 +16,7 @@ export default {
     ios: {
       supportsTablet: false,
       bundleIdentifier: 'com.carteryocham.coachai',
+      scheme: 'coachai',
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
       },

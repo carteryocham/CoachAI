@@ -21,7 +21,7 @@ serve(async (req) => {
         'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages,
@@ -39,13 +39,30 @@ serve(async (req) => {
     const data = await openaiResp.json();
     const content = data.choices?.[0]?.message?.content ?? '';
 
-    // Silent macro extraction — only if message looks like a food log
-    let macros = null;
+    // Multi-meal extraction
+    let meals = null;
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')?.content ?? '';
-    const looksLikeFood = /ate|had|eat|breakfast|lunch|dinner|snack|meal|protein|calories|calories|tuna|egg|beef|rice|chicken|shake/i.test(lastUserMsg);
+    const looksLikeFood = /ate|had|eat|eating|breakfast|lunch|dinner|snack|meal|protein|calories|tuna|egg|beef|rice|chicken|shake|burger|pizza|salad|sandwich|coffee|drink|food|macros/i.test(lastUserMsg);
 
     if (looksLikeFood) {
-      const extractPrompt = `From this coach response, extract the macros for ONLY the most recently described food or meal (not a running daily total). Always estimate carbs and fats using standard nutritional values even if not explicitly listed. Return ONLY a raw JSON object: {"calories":600,"protein":45,"carbs":55,"fats":18,"description":"[short 1 sentence description of this specific meal]"}. ALWAYS include all four numbers. Never return null if any food was mentioned. No markdown, no extra text. Response to parse:\n\n${content}`;
+      const extractPrompt = `You are a macro extraction engine. From the coach response below, extract EVERY distinct meal or food item mentioned as a separate entry.
+
+If the user logged multiple meals (breakfast + lunch + dinner + snacks), return each as a SEPARATE object in the array.
+If only one meal is mentioned, return an array with one object.
+Always estimate ALL four macros using standard nutritional values even if not explicitly stated.
+Assign a meal_type to each: "Breakfast", "Lunch", "Dinner", or "Snack".
+
+Return ONLY a raw JSON array, no markdown, no extra text:
+[
+  {"meal_type":"Breakfast","calories":450,"protein":35,"carbs":40,"fats":12,"description":"3 eggs with toast and orange juice"},
+  {"meal_type":"Lunch","calories":650,"protein":45,"carbs":60,"fats":18,"description":"Chicken rice bowl with vegetables"}
+]
+
+NEVER return null. NEVER return a single object — always an array.
+If no food is mentioned at all, return [].
+
+Coach response to parse:
+${content}`;
 
       const extractResp = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -54,9 +71,9 @@ serve(async (req) => {
           'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4',
+          model: 'gpt-4o',
           messages: [{ role: 'user', content: extractPrompt }],
-          max_tokens: 150,
+          max_tokens: 400,
           temperature: 0,
         }),
       });
@@ -64,13 +81,18 @@ serve(async (req) => {
       if (extractResp.ok) {
         const extractData = await extractResp.json();
         const raw = extractData.choices?.[0]?.message?.content?.trim();
-        if (raw && raw !== 'null') {
-          try { macros = JSON.parse(raw); } catch (_) {}
+        if (raw && raw !== '[]') {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              meals = parsed;
+            }
+          } catch (_) {}
         }
       }
     }
 
-    return new Response(JSON.stringify({ content, macros }), {
+    return new Response(JSON.stringify({ content, meals }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

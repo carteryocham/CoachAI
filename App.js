@@ -11,10 +11,30 @@ import Home from './Home';
 import Chat from './Chat';
 import Meals from './Meals';
 import Settings from './Settings';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://1a2321be2739f013822972a5276486db@o4510995701891072.ingest.us.sentry.io/4510995704184832',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 
 const Stack = createNativeStackNavigator();
 
-export default function App() {
+export default Sentry.wrap(function App() {
   const [ready,       setReady]       = useState(false);
   const [authed,      setAuthed]      = useState(false);
   const [onboarded,   setOnboarded]   = useState(false);
@@ -132,7 +152,7 @@ export default function App() {
       </Stack.Navigator>
     </NavigationContainer>
   );
-}
+});
 
 const s = StyleSheet.create({
   loading: { flex: 1, backgroundColor: '#1C1C1E', alignItems: 'center', justifyContent: 'center' },

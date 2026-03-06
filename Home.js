@@ -111,8 +111,12 @@ export default function Home({ navigation, userData, coachId }) {
   // Load data on focus (refreshes when coming back from Chat)
   useFocusEffect(
     useCallback(() => {
-      loadTodayData();
+      // Small delay ensures any pending inserts from Chat are committed
+      const timer = setTimeout(() => {
+        loadTodayData();
+      }, 300);
       initStreak();
+      return () => clearTimeout(timer);
     }, [])
   );
 
@@ -137,17 +141,15 @@ export default function Home({ navigation, userData, coachId }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const today = getDateString();
       const { data, error } = await supabase
-  .from('daily_logs')
-  .select('*')
-  .eq('user_id', user.id)
-  .eq('log_date', today)
-  .order('created_at', { ascending: true });
+        .from('daily_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('log_date', today)
+        .order('created_at', { ascending: true });
 
-console.log('meals data:', JSON.stringify(data));
-console.log('meals error:', JSON.stringify(error));
-
-if (!error && data) setMeals(data);
+      if (error || !data) return;
 
       setMeals(data);
       const t = data.reduce((acc, m) => ({

@@ -50,7 +50,7 @@ export default function Settings({ navigation, userData, coachId, onUpdateUser, 
     if (id === coachId) return;
     Alert.alert(
       `Switch to ${COACHES.find(c => c.id === id)?.name}?`,
-      'This will start a fresh conversation with your new coach.',
+      'Your conversation history will be kept.',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Switch', onPress: () => switchCoach(id) },
@@ -63,7 +63,6 @@ export default function Settings({ navigation, userData, coachId, onUpdateUser, 
       await AsyncStorage.setItem('coach_id', id);
       onUpdateCoach(id);
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) await supabase.from('chat_messages').delete().eq('user_id', user.id).eq('coach_id', id);
     } catch (e) {}
   };
 

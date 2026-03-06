@@ -6,8 +6,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { supabase } from './services/supabase';
-import Constants from 'expo-constants';
-const SUPABASE_ANON_KEY = Constants.expoConfig.extra.SUPABASE_ANON_KEY;
+import { SUPABASE_ANON_KEY } from './env';
 
 const C = {
   bg:        '#1C1C1E',
@@ -209,29 +208,41 @@ const bs = StyleSheet.create({
 });
 
 // ─── MACRO CONFIRM BANNER ─────────────────────────────────────────────────────
-function MacroBanner({ macros, coachColor, onConfirm, onDismiss }) {
+function MacroBanner({ meals, coachColor, onConfirm, onDismiss }) {
   const slideAnim = useRef(new Animated.Value(80)).current;
 
   useEffect(() => {
     Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 80, friction: 12 }).start();
   }, []);
 
+  const totalCals    = meals.reduce((a, m) => a + (m.calories || 0), 0);
+  const totalProtein = meals.reduce((a, m) => a + (m.protein  || 0), 0);
+  const isMulti = meals.length > 1;
+
   return (
     <Animated.View style={[mb.banner, { transform: [{ translateY: slideAnim }] }]}>
       <View style={mb.left}>
-        <Text style={mb.title}>Log this meal?</Text>
-        <Text style={mb.details}>
-          {Math.round(macros.calories)} kcal · {Math.round(macros.protein)}g protein
-          {macros.carbs ? ` · ${Math.round(macros.carbs)}g carbs` : ''}
-          {macros.fats ? ` · ${Math.round(macros.fats)}g fat` : ''}
-        </Text>
+        <Text style={mb.title}>{isMulti ? `Log ${meals.length} meals?` : 'Log this meal?'}</Text>
+        {isMulti ? (
+          meals.map((m, i) => (
+            <Text key={i} style={mb.mealLine}>
+              {m.meal_type || 'Meal'}: {Math.round(m.calories)} kcal · {Math.round(m.protein)}g protein
+            </Text>
+          ))
+        ) : (
+          <Text style={mb.details}>
+            {Math.round(totalCals)} kcal · {Math.round(totalProtein)}g protein
+            {meals[0]?.carbs ? ` · ${Math.round(meals[0].carbs)}g carbs` : ''}
+            {meals[0]?.fats  ? ` · ${Math.round(meals[0].fats)}g fat`   : ''}
+          </Text>
+        )}
       </View>
       <View style={mb.btns}>
         <TouchableOpacity style={mb.dismiss} onPress={onDismiss}>
           <Text style={mb.dismissText}>Skip</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[mb.confirm, { backgroundColor: coachColor }]} onPress={onConfirm}>
-          <Text style={mb.confirmText}>Log it</Text>
+          <Text style={mb.confirmText}>Log {isMulti ? 'all' : 'it'}</Text>
         </TouchableOpacity>
       </View>
     </Animated.View>
@@ -241,8 +252,9 @@ function MacroBanner({ macros, coachColor, onConfirm, onDismiss }) {
 const mb = StyleSheet.create({
   banner:      { backgroundColor: C.elevated, borderTopWidth: 1, borderTopColor: C.border, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
   left:        { flex: 1 },
-  title:       { fontSize: 13, fontWeight: '700', color: C.text, marginBottom: 2 },
+  title:       { fontSize: 13, fontWeight: '700', color: C.text, marginBottom: 4 },
   details:     { fontSize: 12, color: C.muted },
+  mealLine:    { fontSize: 11, color: C.muted, marginBottom: 1 },
   btns:        { flexDirection: 'row', gap: 8 },
   dismiss:     { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100, borderWidth: 1, borderColor: C.border },
   dismissText: { fontSize: 13, color: C.muted, fontWeight: '600' },
@@ -260,8 +272,7 @@ export default function Chat({ navigation, userData, coachId }) {
   const [loading,       setLoading]       = useState(false);
   const [userId,        setUserId]        = useState(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
-  const [pendingMacros, setPendingMacros] = useState(null);
-  const [pendingDesc,   setPendingDesc]   = useState('');
+  const [pendingMeals,  setPendingMeals]  = useState(null);
 
   useEffect(() => {
     const setup = async () => {
@@ -302,7 +313,7 @@ export default function Chat({ navigation, userData, coachId }) {
     if (!text || loading) return;
     Keyboard.dismiss();
     setInput('');
-    setPendingMacros(null);
+    setPendingMeals(null);
 
     const userMsg = { role: 'user', content: text };
     const updated = [...messages, userMsg];
@@ -336,10 +347,9 @@ export default function Chat({ navigation, userData, coachId }) {
         });
       }
 
-      // Show confirm banner if macros were detected
-      if (data.macros) {
-        setPendingMacros(data.macros);
-        setPendingDesc(text);
+      // Show confirm banner if meals were detected
+      if (data.meals && data.meals.length > 0) {
+        setPendingMeals(data.meals);
       }
 
     } catch (e) {
@@ -350,19 +360,22 @@ export default function Chat({ navigation, userData, coachId }) {
   };
 
   const confirmLog = async () => {
-    if (!pendingMacros || !userId) return;
+    if (!pendingMeals || !userId) return;
     try {
-      await supabase.from('daily_logs').insert({
+      const today = new Date().toISOString().slice(0, 10);
+      const rows = pendingMeals.map(m => ({
         user_id:     userId,
-        log_date:    new Date().toISOString().slice(0, 10),
-        description: pendingMacros.description || pendingDesc,
-        calories:    pendingMacros.calories || 0,
-        protein:     pendingMacros.protein  || 0,
-        carbs:       pendingMacros.carbs    || 0,
-        fats:        pendingMacros.fats     || 0,
-      });
+        log_date:    today,
+        description: m.description || m.meal_type || 'Meal',
+        meal_type:   m.meal_type || 'Meal',
+        calories:    m.calories || 0,
+        protein:     m.protein  || 0,
+        carbs:       m.carbs    || 0,
+        fats:        m.fats     || 0,
+      }));
+      await supabase.from('daily_logs').insert(rows);
     } catch (e) {}
-    setPendingMacros(null);
+    setPendingMeals(null);
   };
 
   if (!historyLoaded) {
@@ -415,13 +428,12 @@ export default function Chat({ navigation, userData, coachId }) {
           }
         />
 
-        {/* Macro confirm banner */}
-        {pendingMacros && !loading && (
+        {pendingMeals && !loading && (
           <MacroBanner
-            macros={pendingMacros}
+            meals={pendingMeals}
             coachColor={coach.color}
             onConfirm={confirmLog}
-            onDismiss={() => setPendingMacros(null)}
+            onDismiss={() => setPendingMeals(null)}
           />
         )}
 
