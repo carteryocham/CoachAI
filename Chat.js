@@ -6,7 +6,8 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { supabase } from './services/supabase';
-import { SUPABASE_ANON_KEY } from './env';
+import Constants from 'expo-constants';
+const SUPABASE_ANON_KEY = Constants.expoConfig.extra.SUPABASE_ANON_KEY;
 
 const C = {
   bg:        '#1C1C1E',
