@@ -20,6 +20,8 @@ export default {
       },
     },
     extra: {
+      SUPABASE_URL: process.env.SUPABASE_URL,
+      SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
       eas: {
         projectId: '429ba28d-3c11-4f56-b906-d516065f6b96',
